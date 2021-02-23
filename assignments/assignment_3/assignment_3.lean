@@ -13,6 +13,12 @@ definition:
 
 
 -- ANSWER HERE
+def double : ℕ → ℕ
+| nat.zero := 0
+| (n' + 1) := double n' + 2
+
+#eval double 0
+#eval double 1
 
 /-
 2. Write a function, map_list_nat, that 
@@ -24,10 +30,13 @@ applying f to each element of l. Make f
 the first argument and l the second. The
 function will work by case analysis and
 recursion on l.
+
 -/
 
 -- ANSWER HERE
- 
+ def map_list_nat : (ℕ → ℕ) → (list ℕ) → (list ℕ)
+ | f []  := []
+ | f (h::t) := list.cons (f h) (map_list_nat f t)
 
 /-
 3. Test your map_list_nat function by
@@ -38,7 +47,9 @@ your set of test inputs and use comments
 to document the expected return values.
 -/
 
-
+#eval map_list_nat double [] -- list.nil
+#eval map_list_nat double [2] -- [4]
+#eval map_list_nat double [1,2,3] -- [2,4,6]
 
 /-
 4. In Lean, repr is an "overloaded"
@@ -63,7 +74,12 @@ converted to a string using repr.
 -/
 
 -- ANSWER HERE
+def map_list_nat_string : (list ℕ) → (list string)
+| [] := []
+| (h::t) := (repr h)::(map_list_nat_string t)
 
+#eval map_list_nat_string []
+#eval map_list_nat_string [1,2,3]
 
 /-
 5. Write a function, filterZeros,
@@ -76,7 +92,15 @@ should return [1,2,3,4,5].
 -/
 
 -- ANSWER HERE
+def filterZeros : list ℕ → list ℕ 
+| list.nil := []
+| (h::t) := let restOfResult := filterZeros(t) in
+            if h = 0
+            then restOfResult
+            else h::restOfResult
 
+#eval filterZeros [0]
+#eval filterZeros [1,2,0,3,4,0,0,5]
 
 /-
 6. Write a function, isEqN, that
@@ -88,7 +112,15 @@ sure to test your function.
 -/
 
 -- ANSWER HERE
+def isEqN : ℕ → ℕ → bool :=
+  λ n,    
+      λ m,        
+        if m = n
+        then bool.tt
+        else bool.ff
 
+#eval isEqN 2 2
+#eval isEqN 100 25
 
 /-
 7.
@@ -104,7 +136,24 @@ argument return true or false).
 -/
 
 -- ANSWER HERE
+def filterNs : (ℕ → bool) → (list ℕ) → list ℕ
+| pred [] := []
+| pred (h::t) := let restOfResult := (filterNs pred t) in 
+                               if pred h = bool.ff
+                               then restOfResult
+                               else h::restOfResult
 
+def p1 :  ℕ → bool :=
+  λ n,
+    isEqN n 1
+
+def p3 :  ℕ → bool :=
+  λ n,
+    isEqN n 3
+
+#eval filterNs p1 [2,1,2]
+#eval filterNs p3 [2,1,2]
+#eval filterNs p1 []
 
 
 /-
@@ -124,7 +173,13 @@ nat.succ, your double function, and
 -/
 
 -- ANSWER HERE
+def iterate : (ℕ → ℕ) → ℕ → ℕ → ℕ 
+| f 0 m := m
+| f (nat.succ n) m := iterate f n (f m)
 
+#eval iterate nat.succ 3 2
+#eval iterate double 2 2
+#eval iterate (nat.add 4) 1 2
 
 /-
 9. Write a function, list_add, that takes
@@ -133,6 +188,11 @@ sum of all the numbers in the list.
 -/
 
 -- ANSWER HERE
+def list_add : list ℕ → ℕ
+| [] := 0
+| (h::t) := h + list_add t
+
+#eval list_add [1,2,3]
 
 
 /-
@@ -142,7 +202,14 @@ product of all the numbers in the list.
 -/
 
 -- ANSWER HERE
+def list_mul : list ℕ → ℕ
+| [] := 0
+| (h::t) := if t = list.nil
+            then h
+            else h * list_mul t
 
+#eval list_mul [2,3,4]
+#eval list_mul []
 
 /-
 11. Write a function, list_has_zero, that
@@ -155,8 +222,14 @@ that both have and don't have zero values.
 -/
 
 -- ANSWER HERE
+def list_has_zero : list ℕ → bool
+| [] := bool.ff
+| (h::t) := if isEqN h 0
+            then bool.tt
+            else list_has_zero t
 
-
+#eval list_has_zero []
+#eval list_has_zero [0]
 
 /-
 12. Write a function, compose_nat_nat,
@@ -169,7 +242,13 @@ argument values.
 -/
 
 -- ANSWER HERE
+def compose_nat_nat : (ℕ → ℕ) → (ℕ → ℕ) → ℕ → ℕ :=
+  λ f,
+    λ g,
+      λ n,
+        g (f n)
 
+#eval compose_nat_nat nat.succ double 2
 
 /-
 13. Write a polymorphic map_box function
@@ -186,6 +265,18 @@ by the application of f.
 -/
 
 -- ANSWER HERE
+universe y
+structure box (α : Type y) : Type y :=
+(val : α)
+
+def map_box : Π (α β : Type y), (α → β) → box α → box β :=
+  λ α,
+    λ β,
+      λ f,
+        λ b,
+          box.mk (f b.val)
+
+#reduce map_box nat nat double (box.mk 1)
 
 /-
 14. 
@@ -199,7 +290,15 @@ f.
 -/
 
 -- ANSWER HERE
+universe u
+def map_option {α β : Type u} : (α → β) → option α → option β
+| f none := option.none
+| f (some (a : α)) := option.some (f a)
 
+#eval map_option repr (option.some 2)
+#check map_option repr (option.some 2)
+#eval map_option double (option.some 2)
+#check map_option double (option.some 2)
 
 /-
 15. Write three functions, default_nat,
@@ -215,4 +314,12 @@ universe variable for the list problem.
 -/
 
 -- ANSWER HERE
+universe z
+def default_nat : ℕ := 1
+def default_bool : bool := bool.tt
+def default_list (α : Type z) : list α := []
 
+
+#eval default_nat
+#eval default_bool
+#eval default_list nat

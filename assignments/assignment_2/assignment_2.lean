@@ -33,6 +33,10 @@ by a smaller ST expression (similarly).
 -/
 
 -- YOUR DATA TYPE DEFINITION HERE
+inductive ST : Type
+| empty
+| salmon (e : ST)
+| trout (e : ST)
 
 /-
 Now assume that the *meaning* of a 
@@ -61,6 +65,17 @@ be recursive.
 -/
 
 -- YOUR EVAL AND HELPER FUNCIONS HERE
+open ST
+
+def fishEvalHelper : ST → prod nat nat → prod nat nat
+| ST.empty (prod.mk s t) := (prod.mk s t)
+| (ST.salmon (e)) (prod.mk s t) := fishEvalHelper e (prod.mk (nat.succ s) t) 
+| (ST.trout (e)) (prod.mk s t) := fishEvalHelper e (prod.mk s (nat.succ t))
+
+def fishEval : ST → ℕ × ℕ
+| empty := fishEvalHelper empty (0,0)
+| (ST.salmon e) := fishEvalHelper (salmon e) (0,0)
+| (ST.trout e) := fishEvalHelper (trout e) (0,0)
 
 /-
  WRITE SOME TEST CASES
@@ -72,6 +87,10 @@ be recursive.
     and two trout.
 -/
 
+def e1 := ST.empty
+def e2 := salmon (salmon (salmon (trout (trout (ST.empty)))))
+#eval fishEval e1
+#eval fishEval e2
 /-
 2. [25 points] polymorphic functions 
 
@@ -89,7 +108,11 @@ with the name, id.
 -/
 
 -- YOUR ANSWER HERE
-
+universe y
+def id' : Π { α : Type y }, α → α := 
+λ α, 
+  λ a, 
+    a
 
 /-
 When you've succeded, the following
@@ -148,6 +171,19 @@ represent this partial function.
 -/
 
 -- YOUR ANSWER HERE
+namespace hidden
+
+universe z
+
+inductive option (α : Type z) : Type z
+| none {} : option
+| some (a : α) : option
+
+end hidden
+
+def pId_bool : bool → option bool
+| tt := option.some tt
+| ff := option.none
 
 /-
 TEST YOUR FUNCTION
@@ -157,7 +193,8 @@ argument values.
 -/
 
 -- HERE
-
+#reduce pId_bool tt
+#reduce pId_bool ff
 
 /- 
 4. [25 points] Higher-order functions 
@@ -176,15 +213,24 @@ the box definition here so you don't have
 to rewrite it.
 -/
 
--- universe u 
+universe u 
 structure box (α : Type u) : Type u :=
 (val : α)
 
+
 -- YOUR FUNCTION HERE
+def liftF2Box : Π {α β : Type u}, (α → β) → (box α) → (box β) :=
+λ α,
+    λ β,
+        λ func,
+            λ bx,
+                box.mk (func bx.val)
+       
+
+
 
 -- WHEN YOU'VE GOT IT, THIS TEST SHOULD PASS
-
-#reduce (liftF2Box nat.succ) (box.mk 3) 
+#reduce (liftF2Box nat.succ) (box.mk 3)
 /- 
 Expect {val:=4}. This is Lean notation for a 
 structure (here a box) with one field, val, 
