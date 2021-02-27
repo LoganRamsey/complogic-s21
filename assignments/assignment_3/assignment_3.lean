@@ -112,8 +112,7 @@ sure to test your function.
 -/
 
 -- ANSWER HERE
-def isEqN : ℕ → ℕ → bool :=
-  λ n,    
+def isEqN (n : ℕ) : (ℕ → bool) :=
       λ m,        
         if m = n
         then bool.tt
@@ -173,13 +172,18 @@ nat.succ, your double function, and
 -/
 
 -- ANSWER HERE
-def iterate : (ℕ → ℕ) → ℕ → ℕ → ℕ 
-| f 0 m := m
-| f (nat.succ n) m := iterate f n (f m)
+-- def iterate : (ℕ → ℕ) → ℕ → ℕ → ℕ 
+-- | f 0 m := m
+-- | f (nat.succ n) m := iterate f n (f m)
 
-#eval iterate nat.succ 3 2
-#eval iterate double 2 2
+def iterate : (ℕ → ℕ) → ℕ → (ℕ → ℕ)
+| f 0 := λ (m : ℕ), m
+| f (nat.succ n') := λ (m : ℕ), (f ((iterate f n') m))
+
+#eval iterate nat.succ 2 3
+#eval iterate double 10 1
 #eval iterate (nat.add 4) 1 2
+
 
 /-
 9. Write a function, list_add, that takes
@@ -242,11 +246,9 @@ argument values.
 -/
 
 -- ANSWER HERE
-def compose_nat_nat : (ℕ → ℕ) → (ℕ → ℕ) → ℕ → ℕ :=
-  λ f,
-    λ g,
-      λ n,
-        g (f n)
+def compose_nat_nat (f : ℕ → ℕ) (g : ℕ → ℕ) : (ℕ → ℕ) :=
+  λ n,   
+    g (f n)
 
 #eval compose_nat_nat nat.succ double 2
 
