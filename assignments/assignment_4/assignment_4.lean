@@ -11,6 +11,33 @@ then pass to a helper function, the job of which
 is to return true (tt) if and only there is some
 tt value in the list.
 -/
+universe u
+def isEqN (n : ℕ) : (ℕ → bool) :=
+      λ m,        
+        if m = n
+        then bool.tt
+        else bool.ff
+
+def map_list {α β : Type u} : 
+    (α → β) → list α → list β 
+| f list.nil := list.nil
+| f (h::t) := (f h)::(map_list f t)
+
+def some_checker : list bool → bool
+| list.nil := ff
+| (h::t) := if h = tt then tt else some_checker t
+
+def someSatisfies {α → Type u} : (α → bool) → list α → bool :=
+  fun p,
+    fun l,
+      if some_checker (map_list p l)
+      then tt
+      else ff
+
+def isTwo := isEqN 2
+def isThree := isEqN 3
+#reduce someSatisfies isTwo [1,2]
+#reduce someSatisfies isThree [1,2]
 
 /-
 2.  Write a polymorphic function, allSatisfy, 
@@ -25,13 +52,30 @@ then pass to a helper function, the job of which
 is to return true (tt) if and only every value
 in the list is tt. 
 -/
+def all_checker : list bool → bool
+| list.nil := ff
+| (h::list.nil) := if h = tt then true else ff
+| (h::t) := if h = ff then ff else all_checker t
+
+def allSatisfies {α → Type u} : (α → bool) → list α → bool :=
+  fun p,
+    fun l,
+      if all_checker (map_list p l) = ff
+      then ff
+      else tt
+
+def isZero := isEqN 0
+def isOne := isEqN 1
+#reduce allSatisfies isOne [0,1]
+#reduce allSatisfies isZero [0,1]
+#reduce allSatisfies isZero [0,0]
 
 /-
 3. Write a function called simple_fold_list.
 It has a type parameter, α, and takes (1) a
 binary function, f, of type α → α → α, (2) a 
 single value, i, of type α, as a list, l, of
-type list α The purpose of simple_fold_list 
+type list α. The purpose of simple_fold_list 
 is to "reduce" a list to a single value by
 (1) returning i for the empty list, otherwise
 (2) returning the result of applying f to the
@@ -44,6 +88,13 @@ simple_fold_list nat.add 0 [1,2,3,4,5] = 15
 simple_fold_list nat.mul 1 [1,2,3,4,5] = 120
 -/
 
+def simple_fold_list {α : Type u} : (α → α → α) → α → list α → α
+| f i list.nil := i
+| f i (h::t) := f h (simple_fold_list f i t)
+
+#reduce simple_fold_list nat.add 0 [1,2,3,4,5]
+#reduce simple_fold_list nat.mul 1 [1,2,3,4,5]
+
 /-
 4. Write an application of simple_fold_list to
 reduce a list of strings to a single string in
@@ -55,11 +106,40 @@ to do so.
 For example, reduce ["Hello", " ", "Lean!"] to
 "Hello, Lean!"
 -/
+#eval simple_fold_list string.append "" ["Hello", ", ", "Lean!"]
 
 /-
 5. Re-implement here your helpder functions from
 questions 1 and 2 using simple_fold_list.
 -/
+def some_checker2 : list bool → bool
+| list.nil := ff
+| l := if (simple_fold_list bor ff l) = tt then tt else ff
+
+def someSatisfies2 {α → Type u} : (α → bool) → list α → bool :=
+  fun p,
+    fun l,
+      if some_checker2 (map_list p l)
+      then tt
+      else ff
+
+#reduce someSatisfies2 isTwo [1,2]
+#reduce someSatisfies2 isThree [1,2]
+
+def all_checker2 : list bool → bool
+| list.nil := ff
+| l := if (simple_fold_list band tt l) = tt then tt else ff
+
+def allSatisfies2 {α → Type u} : (α → bool) → list α → bool :=
+  fun p,
+    fun l,
+      if all_checker2 (map_list p l) = ff
+      then ff
+      else tt
+
+#reduce allSatisfies2 isOne [0,1]
+#reduce allSatisfies2 isZero [0,1]
+#reduce allSatisfies2 isZero [0,0]
 
 /-
 6. This question asks you to understand how to
@@ -109,12 +189,12 @@ argument to ev_ind is impliict, and not that it
 can be inferred from the second argument.)
 -/
 
-def ev0 : ev 0 := _
-def ev2 : ev 2 := _
-def ev4 : ev 4 := _
-def ev6 : ev 6 := _
-def ev8 : ev 8 := _
-def ev10 : ev 10 := _
+def ev0 : ev 0 := ev_base
+def ev2 : ev 2 := ev_ind ev0
+def ev4 : ev 4 := ev_ind ev2
+def ev6 : ev 6 := ev_ind ev4
+def ev8 : ev 8 := ev_ind ev6
+def ev10 : ev 10 := ev_ind ev8
 
 /-
 6B. You should have been able to give values for 
@@ -122,7 +202,12 @@ each of the preceding six types ev 0, ..., ev 10.
 What single word can you use to indate that each
 of these types has at least one value?
 -/
-
+#reduce ev0
+#reduce ev2
+#reduce ev4
+#reduce ev6
+#reduce ev8
+#reduce ev10
 
 /-
 6C. Try to give values for each of the types in
@@ -133,9 +218,13 @@ each of these types, in relation to the fact that
 these types have no values.
 -/
 
-def ev1 : ev 1 := _
-def ev3 : ev 3 := _
-def ev5 : ev 5 := _
+def ev1 : ev 1 := ev1
+def ev3 : ev 3 := ev3
+def ev5 : ev 5 := ev5
+
+ 
+-- Answer: These types are undefined in the inductive family ev.
+
 
 /-
 6D. Define an inductive family, odd n, indexed by
@@ -145,6 +234,16 @@ even numbers have no values. Then show that you
 can complete the preceding three definitions if you
 replace ev by odd.
 -/
+
+inductive odd : ℕ → Type
+| odd_base : odd 1
+| odd_ind  {n : nat} (oddn : odd n) : odd (n + 2)
+
+open odd
+
+def odd1 : odd 1 := odd_base
+def odd3 : odd 3 := odd_ind odd1
+def odd5 : odd 5 := odd_ind odd3
 
 /-
 7. As you know, the type, empty, is uninhabited.
@@ -168,13 +267,25 @@ question at the beginning of this problem.
 
 def foo : ev 1 → empty :=
 λ (e : ev 1),
-  _
+  match e with end
 
 def bar : ev 3 → empty :=
-_
+λ (e : ev 3),
+  match e with
+  | ev_ind evn := foo evn
+  end
 
 def baz : ev 5 → empty :=
-_
+λ (e : ev 5),
+  match e with
+  | ev_ind (ev_ind evn) := foo evn
+  end
+
+#reduce foo ev1
+#reduce bar ev3
+#reduce baz ev5
+
+-- Answer: It tells us that we can choose to not return a value depending on the input value of the function.
 
 /- 8. Define evdp to be a sigma (dependent 
 pair) type, avalue of which has a natural
@@ -186,6 +297,16 @@ respectively, 0, 2, and 4.
 -/
 
 -- Your answers here
+def evdp := Σ (n: nat), ev n
+def evp0 : evdp := ⟨0, ev0⟩
+#check evp0
+#reduce evp0
+def evp2 : evdp := ⟨2, ev2⟩
+#check evp2
+#reduce evp2
+def evp4 : evdp := ⟨4, ev4⟩
+#check evp4
+#reduce evp4
 
 /- 9. Write a function, mkEvp, that takes 
 a argument, n, of type nat, implicitly, and 
@@ -197,3 +318,10 @@ function type?
 -/
 
 -- Your answers here
+def mkEvp : Π {n : nat} (nEv : ev n), evdp
+| 0 ev0 := ⟨0, ev0⟩
+| n' evn' := ⟨n', evn'⟩
+
+#reduce mkEvp ev2
+
+-- Answer: mkEvp will only output a value of type evdp if evn is defined in the ev inductive language
