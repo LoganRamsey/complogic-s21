@@ -54,14 +54,14 @@ inductive streets_wet : Prop
 
 open its_raining streets_wet
 
-def proof_1'' : its_raining := _
-def proof_2'' : its_raining := _
+def proof_1'' : its_raining := i_see_rain_falling
+def proof_2'' : its_raining := i_hear_rain_on_roof
 
-lemma proof_1' : its_raining := _
-lemma proof_2' : its_raining := _
+lemma proof_1' : its_raining := i_see_rain_falling
+lemma proof_2' : its_raining := i_hear_rain_on_roof
 
-theorem proof_1 : its_raining := _
-theorem proof_2 : its_raining := _
+theorem proof_1 : its_raining := i_see_rain_falling
+theorem proof_2 : its_raining := i_hear_rain_on_roof
 
 /-
 We just don't care which value of a
