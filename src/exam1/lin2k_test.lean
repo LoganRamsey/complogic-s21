@@ -18,9 +18,7 @@ vectr with values (4,6), (-6,2), and
 -/
 
 -- HERE
-def v1 : vectr := (4, 6)
-def v2 : vectr := (-6, 2)
-def v3 : vectr := (3, -7)
+
 
 /-
 1B. [10 points]
@@ -39,7 +37,7 @@ v2 + (-1:K) • v1.)
 -/
 
 -- HERE 
-def v4 : vectr := 2•v1 + (-1:K)•v2 + v3
+
 
 /-
 Compute the correct answer by hand
@@ -50,8 +48,7 @@ answer.
 -- HERE
 
 -/
-#eval (v1 + v1) - v2 + v3
-#eval v4
+
 
 /-
 1C. [10 points]
@@ -132,10 +129,7 @@ inverse, and briefly explain why.
 -/
 
 -- HERE
-/-
-The integers mod 4 is not a field but 2 values in the set (2 and 3) do not contain 
-mulitplicative inverses.
--/
+
 
 /-
 5. [20 points]
@@ -163,15 +157,6 @@ expected/correct result.
 
 -- HERE
 
-def sum_vectrs 
-  [add_monoid vectr] 
-  :
-  list vectr → vectr
-| [] := (has_zero.zero, has_zero.zero)
-| (h::t) := add_monoid.add h (sum_vectrs t)
-
-#eval v1 + v2 + v3 + v4
-#eval sum_vectrs [v1,v2,v3,v4]
 
 /-
 6. Required for graduate students,
@@ -222,79 +207,16 @@ to do. Solving this problem will require
 some digging through Lean library code.
 -/
 
-inductive Z5 : Type
-| zero
-| one
-| two
-| three
-| four
+axioms 
+  (Z5 : Type) 
+  (z5add : Z5 → Z5 → Z5)
+  (z5mul : Z5 → Z5 → Z5)
+  #check field Z5
 
-open Z5
 
-def z5add : Z5 → Z5 → Z5 
-| zero zero := zero
-| zero one := one
-| zero two := two
-| zero three := three
-| zero four := four
-| one zero := one
-| one one := two
-| one two := three
-| one three := four
-| one four := zero
-| two zero := two
-| two one := three
-| two two := four
-| two three := one
-| two four := one
-| three zero := three
-| three one := four
-| three two := zero
-| three three := one
-| three four := two
-| four zero := four
-| four one := zero
-| four two := one
-| four three := two
-| four four := three
-
-def z5mul : Z5 → Z5 → Z5 
-| zero zero := zero
-| zero one := zero
-| zero two := zero
-| zero three := zero
-| zero four := zero
-| one zero := zero
-| one one := one
-| one two := two
-| one three := three
-| one four := four
-| two zero := zero
-| two one := two
-| two two := four
-| two three := one
-| two four := three
-| three zero := zero
-| three one := three
-| three two := one
-| three three := four
-| three four := two
-| four zero := zero
-| four one := four
-| four two := three
-| four three := two
-| four four := one
-
--- axioms 
---   (Z5 : Type) 
---   (z5add : Z5 → Z5 → Z5)
---   (z5mul : Z5 → Z5 → Z5)
---   #check field Z5
-
-#check field Z5
 
 -- HERE
-instance f : field Z5 := sorry
+
 
 /-
 B. [15 points]
@@ -315,15 +237,7 @@ that it's working correctly.
 -/
 
 -- HERE
-abbreviation z5scalr := Z5
-abbreviation z5vectr := Z5 × Z5
 
-def s1 : z5scalr := three
-def s2 : z5scalr := two
-def v5 : z5vectr := (one, three)
-def v6 : z5vectr := (four, two)
-
-#reduce (z5add (z5mul s2 v5.fst) (z5mul s1 v6.fst), z5add (z5mul s2 v5.snd) (z5mul s1 v6.snd))
 
 /-
 Take away: Instantiating a typeclass
