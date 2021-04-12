@@ -7,7 +7,9 @@ true && false,
 
 inductive bool_expr : Type
 | lit_expr : bool → bool_expr 
-| and_expr : bool_expr → bool_expr → bool_expr 
+| and_expr : bool_expr → bool_expr → bool_expr
+| or_expr : bool_expr → bool_expr → bool_expr
+| not_expr : bool_expr → bool_expr 
 
 open bool_expr 
 
@@ -20,6 +22,8 @@ def e3 := and_expr (lit_expr tt) [ff]
 def e4 := and_expr e3 [tt]
 
 notation e1 && e2 := and_expr e1 e2
+notation e1 || e2 := or_expr e1 e2
+notation ¬e := not_expr e
 
 def e3' := [tt] && [ff]
 def e4' := e3 && [tt]
@@ -31,5 +35,21 @@ def e4' := e3 && [tt]
 def bool_eval : bool_expr → bool
 | (lit_expr b) := b
 | (and_expr e1 e2) := band (bool_eval e1) (bool_eval e2)
+| (or_expr e1 e2) := bor (bool_eval e1) (bool_eval e2)
+| (not_expr e) := bnot (bool_eval e)
 
 #eval bool_eval e4'
+#eval (bool_eval [ff]) && (bool_eval [tt])
+#eval bool_eval (e4' && e3)
+
+example : ∀ (e1 e2 : bool_expr), bool_eval (e1 && e2) = bool_eval (e2 && e1) :=
+λ e1 e2,
+begin      
+  simp [bool_eval],
+  cases (bool_eval e1),
+  cases (bool_eval e2),
+  simp [band],
+  apply rfl,
+  cases (bool_eval e2),
+  repeat {apply rfl,}
+end
