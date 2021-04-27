@@ -1,4 +1,5 @@
 import ...inClassNotes.langs.bool_expr
+import ...inClassNotes.langs.arith_expr
 import data.bool
 
 
@@ -13,17 +14,17 @@ light of these changes in the software about which it proves
 that property. Hint: Be sure to add a state argument everywhere
 one is needed. Here's the original proof. Just fix it here.
 -/
-example : ∀ (e1 e2 : bool_expr), 
-  bool_eval (e1 ∧ e2) = bool_eval (e2 ∧ e1) 
+example : ∀ (e1 e2 : bool_expr) (st : bool_var → bool), 
+  bool_eval (e1 ∧ e2) st = bool_eval (e2 ∧ e1) st
   :=
 begin
-  assume e1 e2,
+  assume e1 e2 st,
   simp [bool_eval],
-  cases (bool_eval e1),
-  cases (bool_eval e2),
+  cases (bool_eval e1 st),  
+  cases (bool_eval e2 st),
   apply rfl,
   apply rfl,
-  cases (bool_eval e2),
+  cases (bool_eval e2 st),
   repeat {apply rfl},
 end
 
@@ -54,7 +55,15 @@ find that they really do find bugs in code!
 example : ∀ (e1 e2 : bool_expr) (st: bool_var → bool), 
   bool_eval (¬e1 ∨ e2) st = bool_eval (e1 => e2) st  := 
 begin
-  -- your answer
+  assume e1 e2 st,
+  simp [bool_eval],
+  cases (bool_eval e1 st),
+  cases (bool_eval e2 st),
+  apply refl,
+  simp [bimp],
+  cases (bool_eval e2 st),
+  apply refl,
+  simp [bimp],
 end
 
 
@@ -123,6 +132,32 @@ above under each new constructor to explain what it specifies. Just
 add your additional constructors to the preceding code in this file.
 -/
 
+/-
+If e1 and e2 are expressions, st is a state, b1 and b2 are
+bools, and the meaning of e1 in st is b1, and the meaning of e2 in st
+is b2, then the meaning of (e1 ∨ e2) in st is the Boolean, b1 || b2.
+-/
+
+| or_sem : ∀ (e1 e2 : bool_expr) (st : bool_var → bool) (b1 b2 : bool),
+      bool_sem st e1 b1  → bool_sem st e2 b2 → bool_sem st (e1 ∨ e2) (b1 || b2)
+
+/-
+If e is an expression, st is a state, b is a bool,
+and the meaning of e in st is b, then the meaning of ¬ e in st is the Boolean, bnot e .
+-/
+
+| not_sem : ∀ (e : bool_expr) (st : bool_var → bool) (b : bool),
+      bool_sem st e b → bool_sem st (¬ e) (bnot b)
+
+/-
+If e1 and e2 are expressions, st is a state, b1 and b2 are bools,
+and the meaning of e1 in st is b1, and the meaning of e2 in st is b2, 
+then the meaning of e1 => e2 in st is the Boolean, bimp b1 b2 .
+-/
+
+| impl_sem : ∀ (e1 e2 : bool_expr) (st : bool_var → bool) (b1 b2 : bool),
+      bool_sem st e1 b1  → bool_sem st e2 b2 → bool_sem st (e1 => e2) (bimp b1 b2)
+  
 /- 3B. Challenging. Extra credit for undergraduates. Required for
 graduate students. Here you are asked to prove that for any two
 expressions, e1 and e2, any state, st, and any Boolean value, v,
@@ -170,7 +205,7 @@ done, you're close to being finished. It doesn't always
 work this way, but here we're lucky. Also, we've given
 you both the proposition to be proved and the first few
 "moves."
--/
+-/ 
 #check bool.band_comm
 
 example : ∀ (e1 e2 : bool_expr) (st : bool_var → bool) (b : bool), 
@@ -180,11 +215,19 @@ begin
   split,
 
   -- forward direction
-  assume h,
-
-
-  -- reverse direction
-
+  assume h,  
+  cases h,
+  rw bool.band_comm,  
+  apply bool_sem.and_sem,
+  assumption,
+  assumption,
+  -- reverse direction  
+  assume j,
+  cases j,
+  rw bool.band_comm,
+  apply bool_sem.and_sem,
+  assumption,
+  assumption,
 end
 
 /- 4. [20 points]
@@ -197,3 +240,40 @@ in any state.
 -/
 
 -- HERE
+
+inductive arith_sem : (avar → nat) → aexp → nat → Prop
+| lit_sem (n : nat) (e : aexp) (st : avar → nat) : arith_sem st [n] n
+| var_sem (v : avar) (e : aexp) (st : avar → nat) : arith_sem st [v] (st v)
+| add_sem : ∀ (e1 e2 : aexp) (st : avar → nat) (n1 n2 : nat), 
+      arith_sem st e1 n1  → arith_sem st e2 n2 → arith_sem st (e1 + e2) (n1 + n2)
+| mul_sem : ∀ (e1 e2 : aexp) (st : avar → nat) (n1 n2 : nat), 
+      arith_sem st e1 n1  → arith_sem st e2 n2 → arith_sem st (e1 * e2) (n1 * n2)
+
+
+open arith_sem
+
+lemma new_add_comm : ∀ n m : ℕ, n.add m = m + n
+| n 0     := eq.symm (nat.zero_add n)
+| n (m+1) :=
+  suffices nat.succ (n + m) = nat.succ (m + n), from
+    eq.symm (nat.succ_add m n) ▸ this,
+  congr_arg nat.succ (new_add_comm n m)
+
+example : ∀ (e1 e2 : aexp) (st : avar → nat) (n : nat), 
+arith_sem st (e1 + e2) n ↔ arith_sem st (e2 + e1) n :=
+begin
+  intros,
+  split,
+  assume h,
+  cases h,
+  rw new_add_comm,
+  apply add_sem,
+  assumption,
+  assumption,
+  assume j,
+  cases j,
+  rw new_add_comm,
+  apply add_sem,
+  assumption,
+  assumption,
+end
